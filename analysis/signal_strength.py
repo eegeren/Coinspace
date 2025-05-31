@@ -31,3 +31,10 @@ def calculate_signal_strength(rsi, macd, ema_trend, volume, sentiment_score):
     if volume > 1000000: score += 1
     if sentiment_score > 0.2: score += 1
     return {"score": score}
+
+def append_leverage_comment(_, ema_trend: str) -> str:
+    if "up" in ema_trend.lower():
+        return "Trend pozitif, 3x-5x kaldıraca uygun."
+    elif "down" in ema_trend.lower():
+        return "Trend zayıf, mümkünse kaldıraçsız işlem yap."
+    return "Belirsiz trend, minimum kaldıraçla işlem yapılmalı."

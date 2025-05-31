@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from analysis.signal_strength import generate_signal, get_technical_analysis, calculate_signal_strength
+from analysis.signal_strength import generate_signal, get_technical_analysis, calculate_signal_strength, append_leverage_comment
 from analysis.news_analyzer import analyze_news
 from utils.premium_manager import is_premium
 from utils.helpers import format_signal_result
