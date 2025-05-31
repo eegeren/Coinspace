@@ -1,25 +1,35 @@
+import pandas as pd
+import pandas_ta as ta
 from binance.client import Client
-import numpy as np
-import talib
 
-client = Client()
+client = Client(api_key="YOUR_API_KEY", api_secret="YOUR_SECRET_KEY")  # .env üzerinden alınmalı
 
-def get_technical_analysis(symbol):
+def get_technical_analysis(symbol: str):
+    # Binance'ten veri çek
     klines = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=100)
-    closes = np.array([float(kline[4]) for kline in klines])
+    closes = [float(kline[4]) for kline in klines]
 
-    rsi = float(talib.RSI(closes, timeperiod=14)[-1])
-    macd, macdsignal, _ = talib.MACD(closes)
-    macd_signal = "bullish" if macd[-1] > macdsignal[-1] else "bearish"
+    df = pd.DataFrame({'close': closes})
+    
+    # RSI
+    df['rsi'] = ta.rsi(df['close'], length=14)
+    
+    # MACD
+    macd_df = ta.macd(df['close'])
+    df = pd.concat([df, macd_df], axis=1)
+    
+    # EMA Trend
+    df['ema'] = ta.ema(df['close'], length=21)
+    ema_trend = "uptrend" if df['ema'].iloc[-1] > df['ema'].iloc[-2] else "downtrend"
 
-    ema_current = talib.EMA(closes, timeperiod=21)[-1]
-    ema_prev = talib.EMA(closes, timeperiod=21)[-2]
-    ema_trend = "uptrend" if ema_current > ema_prev else "downtrend"
+    # MACD sinyali
+    macd_signal = "bullish" if df['MACD_12_26_9'].iloc[-1] > df['MACDs_12_26_9'].iloc[-1] else "bearish"
 
-    signal_strength = "BUY" if rsi > 50 and macd_signal == "bullish" else "SELL"
+    # Sinyal kararı
+    signal_strength = "BUY" if df['rsi'].iloc[-1] > 50 and macd_signal == "bullish" else "SELL"
 
     return {
-        "rsi": round(rsi, 2),
+        "rsi": round(df['rsi'].iloc[-1], 2),
         "signal": signal_strength,
         "ema_trend": ema_trend,
         "macd": macd_signal

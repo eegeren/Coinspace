@@ -8,4 +8,4 @@ openai>=1.0.0
 yfinance
 ta
 python-binance
-TA-Lib
+pandas-ta
