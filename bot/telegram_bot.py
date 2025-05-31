@@ -5,12 +5,10 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-
-from utils.premium_manager import is_premium
-from analysis.news_analyzer import analyze_news
+from analysis.technical_analyzer import get_technical_analysis
 from analysis.signal_generator import generate_signal
 from analysis.news_analyzer import analyze_news
-from analysis.technical_analyzer import get_technical_analysis
+from utils.premium_manager import is_premium
 from utils.helpers import format_signal_result
 from config.config import PREMIUM_IDS, SUMMARY_CHAT_ID
 from utils.watchlist_manager import (
@@ -18,6 +16,7 @@ from utils.watchlist_manager import (
     remove_coin_from_watchlist,
     get_user_watchlist
 )
+
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
