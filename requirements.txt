@@ -1,14 +1,13 @@
 fastapi
 uvicorn
-python-telegram-bot
+python-telegram-bot==20.3
 requests
 python-dotenv
 apscheduler
 openai>=1.0.0
 yfinance
 ta
+pandas
+pandas_ta
 python-binance
 numpy
-python-dotenv
-requests
-
