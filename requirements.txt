@@ -7,6 +7,3 @@ apscheduler
 openai>=1.0.0
 yfinance
 ta
-python-binance
-numpy
-setuptools<66
