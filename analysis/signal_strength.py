@@ -1,6 +1,6 @@
-import pandas as pd
-import pandas_ta as ta
 from binance.client import Client
+import numpy as np
+
 
 client = Client(api_key="YOUR_API_KEY", api_secret="YOUR_SECRET_KEY")  # .env üzerinden alınmalı
 
@@ -34,6 +34,9 @@ def get_technical_analysis(symbol: str):
         "ema_trend": ema_trend,
         "macd": macd_signal
     }
+
+
+
 
 def generate_signal(symbol):
     price = float(client.get_symbol_ticker(symbol=symbol)['price'])
