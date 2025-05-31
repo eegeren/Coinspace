@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from telegram_bot import news 
+from analysis.news_analyzer import analyze_news
 from analysis.signal_generator import generate_signal
 from analysis.news_analyzer import analyze_news
 from analysis.technical_analyzer import get_technical_analysis
@@ -237,7 +237,7 @@ def setup_handlers(app: Application):
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("deep", deep))
-    app.add_handler(CommandHandler("news", news))
+    app.add_handler(CommandHandler("news", analyze_news))
     app.add_handler(CommandHandler("tech", tech))
     app.add_handler(CommandHandler("signal", signal))
     app.add_handler(CommandHandler("premium", premium))
