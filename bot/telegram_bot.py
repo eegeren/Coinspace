@@ -5,6 +5,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+
+from utils.premium_manager import is_premium
 from analysis.news_analyzer import analyze_news
 from analysis.signal_generator import generate_signal
 from analysis.news_analyzer import analyze_news
