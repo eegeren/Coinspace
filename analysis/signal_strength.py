@@ -1,70 +1,64 @@
-from binance.client import Client
+# signal_strength.py
+
+import os
 import numpy as np
+from binance.client import Client
+import pandas as pd
+import pandas_ta as ta
+from dotenv import load_dotenv
 
+load_dotenv()
 
-client = Client(api_key="YOUR_API_KEY", api_secret="YOUR_SECRET_KEY")  # .env üzerinden alınmalı
+BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")
+BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET")
+
+client = Client(api_key=BINANCE_API_KEY, api_secret=BINANCE_API_SECRET)
 
 def get_technical_analysis(symbol: str):
-    # Binance'ten veri çek
     klines = client.get_klines(symbol=symbol, interval=Client.KLINE_INTERVAL_1HOUR, limit=100)
-    closes = [float(kline[4]) for kline in klines]
+    closes = np.array([float(kline[4]) for kline in klines])
+    df = pd.DataFrame(closes, columns=["close"])
 
-    df = pd.DataFrame({'close': closes})
-    
-    # RSI
-    df['rsi'] = ta.rsi(df['close'], length=14)
-    
-    # MACD
-    macd_df = ta.macd(df['close'])
-    df = pd.concat([df, macd_df], axis=1)
-    
-    # EMA Trend
-    df['ema'] = ta.ema(df['close'], length=21)
-    ema_trend = "uptrend" if df['ema'].iloc[-1] > df['ema'].iloc[-2] else "downtrend"
+    rsi = ta.rsi(df["close"], length=14).iloc[-1]
+    macd = ta.macd(df["close"])
+    macd_signal = "bullish" if macd["MACD_12_26_9"].iloc[-1] > macd["MACDs_12_26_9"].iloc[-1] else "bearish"
 
-    # MACD sinyali
-    macd_signal = "bullish" if df['MACD_12_26_9'].iloc[-1] > df['MACDs_12_26_9'].iloc[-1] else "bearish"
+    ema_now = ta.ema(df["close"], length=21).iloc[-1]
+    ema_prev = ta.ema(df["close"], length=21).iloc[-2]
+    ema_trend = "uptrend" if ema_now > ema_prev else "downtrend"
 
-    # Sinyal kararı
-    signal_strength = "BUY" if df['rsi'].iloc[-1] > 50 and macd_signal == "bullish" else "SELL"
+    signal = "BUY" if rsi > 50 and macd_signal == "bullish" else "SELL"
 
     return {
-        "rsi": round(df['rsi'].iloc[-1], 2),
-        "signal": signal_strength,
+        "rsi": round(float(rsi), 2),
+        "macd": macd_signal,
         "ema_trend": ema_trend,
-        "macd": macd_signal
+        "signal": signal
     }
 
-
-
-
-def generate_signal(symbol):
-    price = float(client.get_symbol_ticker(symbol=symbol)['price'])
-    entry = round(price * 1.001, 2)
-    stop_loss = round(price * 0.98, 2)
-    take_profit = round(price * 1.03, 2)
-
-    volume = float(client.get_ticker(symbol=symbol)['quoteVolume'])
+def generate_signal(symbol: str):
+    tech = get_technical_analysis(symbol)
+    entry_price = float(client.get_symbol_ticker(symbol=symbol)["price"])
+    stop_loss = round(entry_price * 0.95, 2)
+    take_profit = round(entry_price * 1.05, 2)
+    volume = float(client.get_ticker_24hr(symbol=symbol)["quoteVolume"])
 
     return {
-        "final_signal": "BUY",
-        "entry": entry,
-        "stop_loss": stop_loss,
-        "take_profit": take_profit,
+        "final_signal": tech["signal"],
+        "entry": str(entry_price),
+        "stop_loss": str(stop_loss),
+        "take_profit": str(take_profit),
         "volume": volume,
         "leverage": "3x",
-        "ai_comment": "Analiz algoritması bu coini alıma uygun gördü."
+        "ai_comment": "Teknik göstergeler mevcut trende göre değerlendirilmiştir."
     }
-
-
-
 
 def calculate_signal_strength(rsi, macd, ema_trend, volume, sentiment_score):
     score = 0
     if rsi > 50: score += 1
-    if "bullish" in macd.lower(): score += 1
-    if "up" in ema_trend.lower(): score += 1
-    if volume > 1000000: score += 1
+    if macd.lower() == "bullish": score += 1
+    if ema_trend.lower() == "uptrend": score += 1
+    if volume > 1_000_000: score += 1
     if sentiment_score > 0.2: score += 1
     return {"score": score}
 
