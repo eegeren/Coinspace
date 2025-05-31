@@ -8,4 +8,9 @@ openai>=1.0.0
 yfinance
 ta
 python-binance
+setuptools>=68.0.0
+pandas
 pandas-ta
+python-binance
+python-dotenv
+
