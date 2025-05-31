@@ -8,4 +8,5 @@ openai>=1.0.0
 yfinance
 ta
 python-binance
-numpy==1.24.4
+numpy
+setuptools<66
