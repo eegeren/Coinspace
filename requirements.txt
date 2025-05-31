@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-telegram-bot
+requests
+python-dotenv
+apscheduler
+openai>=1.0.0
+yfinance
+ta
