@@ -11,3 +11,4 @@ pandas
 pandas_ta
 python-binance
 numpy
+setuptools<81
