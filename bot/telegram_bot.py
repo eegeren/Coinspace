@@ -77,52 +77,72 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/premium - VIP Access – Unlock Full Power"
     )
 
-async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_chat.id
-    is_premium = str(user_id) in PREMIUM_IDS
-    coin = context.args[0].upper() if context.args else None
-    if not coin:
-        await update.message.reply_text("⚠️ Please provide a coin symbol (e.g., /analyze BTCUSDT).")
+async def deep(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_premium(update.effective_chat.id):
+        await update.message.reply_text("🔒 Bu özellik yalnızca premium kullanıcılar içindir.")
         return
 
-    signal_result = generate_signal(coin)
-    news_result = analyze_news(coin)
-    tech_result = get_technical_analysis(coin)
-    price = signal_result.get("price", "N/A")
-
-    message = (
-        f"🧠 News Sentiment: {news_result['sentiment']}\n"
-        + "\n".join([f"- {h}" for h in news_result['headlines']]) + "\n\n"
-        f"📊 RSI: {tech_result['rsi']}\n"
-        f"📈 Technical Signal: {tech_result['signal']}\n"
-    )
-
-    if is_premium:
-        message += (
-            f"🔍 EMA Trend: {tech_result.get('ema_trend', 'N/A')}\n"
-            f"📉 MACD: {tech_result.get('macd', 'N/A')}\n"
-            f"📥 Entry Point: {signal_result.get('entry', 'N/A')}\n"
-            f"🛑 Stop Loss: {signal_result.get('stop_loss', 'N/A')}\n"
-            f"🎯 Take Profit: {signal_result.get('take_profit', 'N/A')}\n"
-            f"⚖️ Leverage Suggestion: {signal_result.get('leverage', 'N/A')}\n\n"
-            f"🤖 *AI Comment:*\n_{signal_result.get('ai_comment', 'N/A')}_"
-        )
-    else:
-        message += (
-            f"\n💵 Current Price: {price}\n"
-            "🔒 Unlock full entry/exit analysis and AI insights with /premium"
-        )
-
-    await update.message.reply_text(message, parse_mode="Markdown")
-
-async def news(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    coin = context.args[0].upper() if context.args else None
-    if not coin:
-        await update.message.reply_text("⚠️ Please provide a coin symbol (e.g., /news BTCUSDT).")
+    coin = context.args[0].upper() if context.args else "BTC"
+    allowed_coins = {"BTC", "ETH", "BNB", "SOL", "XRP", "ADA", "DOGE", "AVAX", "MATIC", "DOT"}
+    if coin not in allowed_coins:
+        await update.message.reply_text("❌ Geçersiz coin sembolü. Örnek: /deep BTC")
         return
-    result = analyze_news(coin)
-    msg = f"🧠 News Sentiment: {result['sentiment']}\n\n" + "\n".join([f"- {h}" for h in result['headlines']])
-    await update.message.reply_text(msg)
+
+    try:
+        signal = generate_signal(coin)
+        tech = get_technical_analysis(coin)
+        news = analyze_news(coin)
+
+        rsi = tech.get("rsi", 50)
+        ema = tech.get("ema_trend", "N/A")
+        macd = tech.get("macd", "N/A")
+        sentiment = news.get("sentiment", "N/A")
+        sentiment_score = news.get("sentiment_score", 0)
+        volume = signal.get("volume", 0)
+        trend = tech.get("signal", "Belirsiz")
+
+        strength = calculate_signal_strength(
+            rsi=rsi,
+            macd=macd,
+            ema_trend=ema,
+            volume=volume,
+            sentiment_score=sentiment_score
+        )
+
+        bar = "🟩" * strength["score"] + "⬜" * (5 - strength["score"])
+        explanation = []
+
+        if macd.lower() == "bearish" and trend.startswith("BUY"):
+            explanation.append("• MACD düşüşteyken alış sinyali verilmiş.")
+        if ema.lower() == "downtrend" and trend.startswith("BUY"):
+            explanation.append("• EMA düşüş eğilimindeyken alış sinyali verilmiş.")
+
+        explanation_text = "\n".join(explanation)
+
+        msg = f"""
+🔎 *{coin} Genel Tarama*
+
+🧠 Duyarlılık: {sentiment}
+🧠 Duyarlılık Skoru: {sentiment_score:.2f}
+📊 RSI: {rsi}
+📈 Trend: {trend}
+📐 EMA: {ema}
+📉 MACD: {macd}
+📥 Giriş: {signal.get('entry', 'Veri yok')}
+🛑 SL: {signal.get('stop_loss', 'Veri yok')}
+🎯 TP: {signal.get('take_profit', 'Veri yok')}
+📈 Hacim: {volume}
+⚖️ Kaldıraç: {append_leverage_comment('', ema)}
+
+⭐ *Sinyal Gücü:* {bar}
+{explanation_text}
+"""
+        await update.message.reply_text(msg, parse_mode="Markdown")
+
+    except Exception as e:
+        await update.message.reply_text("⚠️ Derin analiz sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.")
+        print(f"Error in /deep command: {e}")
+
 
 async def tech(update: Update, context: ContextTypes.DEFAULT_TYPE):
     coin = context.args[0].upper() if context.args else None
