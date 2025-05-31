@@ -65,7 +65,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "/start - Welcome message\n"
         "/help - Command list\n"
-        "/analyze COIN - Full analysis\n"
+        "/deep COIN - Full analysis\n"
         "/news COIN - News analysis only\n"
         "/tech COIN - Technical analysis only\n"
         "/signal COIN - Signal summary\n"
@@ -235,7 +235,7 @@ async def realtime(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def setup_handlers(app: Application):
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("analyze", analyze))
+    app.add_handler(CommandHandler("deep", deep))
     app.add_handler(CommandHandler("news", news))
     app.add_handler(CommandHandler("tech", tech))
     app.add_handler(CommandHandler("signal", signal))
