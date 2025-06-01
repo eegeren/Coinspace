@@ -5,9 +5,11 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from analysis.signal_generator import generate_signal
+
+from telegram import Update
+from telegram.ext import CommandHandler, ContextTypes
+from analysis.signal_strength import fetch_binance_data, get_technical_indicators, generate_signal, format_telegram_message
 from analysis.news_analyzer import analyze_news
-from analysis.technical_analyzer import get_technical_analysis
 from utils.helpers import format_signal_result
 from config.config import PREMIUM_IDS, SUMMARY_CHAT_ID
 from utils.watchlist_manager import (
@@ -77,43 +79,18 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/premium - VIP Access – Unlock Full Power"
     )
 
-async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_chat.id
-    is_premium = str(user_id) in PREMIUM_IDS
-    coin = context.args[0].upper() if context.args else None
-    if not coin:
-        await update.message.reply_text("⚠️ Please provide a coin symbol (e.g., /analyze BTCUSDT).")
-        return
+async def deep(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        symbol = context.args[0].upper() if context.args else "XRPUSDT"
+        df = fetch_binance_data(symbol=symbol)
+        df = get_technical_indicators(df)
+        signal = generate_signal(df)
+        message = format_telegram_message(signal)
+        await update.message.reply_markdown(message)
+    except Exception as e:
+        await update.message.reply_text("⚠️ Derin analiz sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.")
+        print(f"/deep hata: {e}")
 
-    signal_result = generate_signal(coin)
-    news_result = analyze_news(coin)
-    tech_result = get_technical_analysis(coin)
-    price = signal_result.get("price", "N/A")
-
-    message = (
-        f"🧠 News Sentiment: {news_result['sentiment']}\n"
-        + "\n".join([f"- {h}" for h in news_result['headlines']]) + "\n\n"
-        f"📊 RSI: {tech_result['rsi']}\n"
-        f"📈 Technical Signal: {tech_result['signal']}\n"
-    )
-
-    if is_premium:
-        message += (
-            f"🔍 EMA Trend: {tech_result.get('ema_trend', 'N/A')}\n"
-            f"📉 MACD: {tech_result.get('macd', 'N/A')}\n"
-            f"📥 Entry Point: {signal_result.get('entry', 'N/A')}\n"
-            f"🛑 Stop Loss: {signal_result.get('stop_loss', 'N/A')}\n"
-            f"🎯 Take Profit: {signal_result.get('take_profit', 'N/A')}\n"
-            f"⚖️ Leverage Suggestion: {signal_result.get('leverage', 'N/A')}\n\n"
-            f"🤖 *AI Comment:*\n_{signal_result.get('ai_comment', 'N/A')}_"
-        )
-    else:
-        message += (
-            f"\n💵 Current Price: {price}\n"
-            "🔒 Unlock full entry/exit analysis and AI insights with /premium"
-        )
-
-    await update.message.reply_text(message, parse_mode="Markdown")
 
 async def news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     coin = context.args[0].upper() if context.args else None
@@ -215,7 +192,7 @@ async def realtime(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def setup_handlers(app: Application):
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("analyze", analyze))
+    app.add_handler(CommandHandler("deep", deep))
     app.add_handler(CommandHandler("news", news))
     app.add_handler(CommandHandler("tech", tech))
     app.add_handler(CommandHandler("signal", signal))
